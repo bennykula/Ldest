@@ -1,35 +1,13 @@
 #!/usr/bin/env python3
-from dataclasses import dataclass
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable
 
 import neo4j
 
-
-@dataclass
-class Node:
-    id: str  # MAC
-    labels: List[str]
-    properties: Dict[str, str]
-
-    def __init__(self, neo4j_node: neo4j.data.Node):
-        self.id = neo4j_node.id
-        self.labels = list(set(neo4j_node.labels))
-        self.properties = dict(neo4j_node._properties)
+from models.edge_model import EdgeModel
+from models.node_model import NodeModel
 
 
-@dataclass
-class Edge:
-    labels: List[str]
-    source_node: Node
-    destination_node: Node
-
-    def __init__(self, labels: Iterable[str], source_node: Node, destination_node: Node):
-        self.labels = list(set(labels))
-        self.source_node = source_node
-        self.destination_node = destination_node
-
-
-def generate_creation_query(edges: Iterable[Edge]) -> str:
+def generate_creation_query(edges: Iterable[EdgeModel]) -> str:
     creation_query = f'CREATE '
     creation_query_variables = set()
     for edge in edges:
@@ -73,7 +51,7 @@ def variable_name(obj: any) -> str:
     return 'id_' + str(id(obj))
 
 
-def generate_match_query(edges: Iterable[Edge]) -> str:
+def generate_match_query(edges: Iterable[EdgeModel]) -> str:
     match_query = 'MATCH '
     connections = []
     match_query_variables = set()
@@ -91,14 +69,14 @@ def generate_match_query(edges: Iterable[Edge]) -> str:
 
 
 if __name__ == '__main__':
-    node1 = Node(neo4j.data.Node(None, n_id='1', n_labels={'Person'}, properties=dict()))
-    node2 = Node(
+    node1 = NodeModel(neo4j.data.Node(None, n_id='1', n_labels={'Person'}, properties=dict()))
+    node2 = NodeModel(
         neo4j.data.Node(
             None, n_id='2', n_labels={'Person', 'Swedish'}, properties={'name': 'Andy', 'title': 'Developer'}
         )
     )
-    node3 = Node(neo4j.data.Node(None, n_id='3', n_labels={'Person', 'Murderer'}, properties=dict()))
-    this_edges = [Edge({'FRIENDS'}, node1, node2), Edge({'ENEMIES'}, node1, node3)]
+    node3 = NodeModel(neo4j.data.Node(None, n_id='3', n_labels={'Person', 'Murderer'}, properties=dict()))
+    this_edges = [EdgeModel({'FRIENDS'}, node1, node2), EdgeModel({'ENEMIES'}, node1, node3)]
     print(generate_creation_query(this_edges))
     print('===============MATCH:=================')
     print(generate_match_query(this_edges))
