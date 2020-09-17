@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
-from typing import Dict, Iterable, Set
+from typing import Dict, Iterable, List
 
 import neo4j
 
@@ -8,20 +8,25 @@ import neo4j
 @dataclass
 class Node:
     id: str  # MAC
-    labels: Set[str]
+    labels: List[str]
     properties: Dict[str, str]
 
     def __init__(self, neo4j_node: neo4j.data.Node):
         self.id = neo4j_node.id
-        self.labels = set(neo4j_node.labels)
+        self.labels = list(set(neo4j_node.labels))
         self.properties = dict(neo4j_node._properties)
 
 
 @dataclass
 class Edge:
-    types: Set[str]
+    labels: List[str]
     source_node: Node
     destination_node: Node
+
+    def __init__(self, labels: Iterable[str], source_node: Node, destination_node: Node):
+        self.labels = list(set(labels))
+        self.source_node = source_node
+        self.destination_node = destination_node
 
 
 def generate_creation_query(edges: Iterable[Edge]) -> str:
@@ -39,7 +44,7 @@ def generate_creation_query(edges: Iterable[Edge]) -> str:
             creation_query += ')'
 
             if node.id == edge.source_node.id:
-                creation_query += f'-[{variable_name(edge)}:{":".join(edge.types)}]->'
+                creation_query += f'-[{variable_name(edge)}:{":".join(edge.labels)}]->'
 
         creation_query += ', '
 
@@ -48,7 +53,7 @@ def generate_creation_query(edges: Iterable[Edge]) -> str:
     return creation_query
 
 
-def _generate_labels_and_properties_query(labels: Set[str], properties: Dict[str, str]) -> str:
+def _generate_labels_and_properties_query(labels: Iterable[str], properties: Dict[str, str]) -> str:
     labels_and_properties = f':{":".join(labels)}'
     if len(properties) > 0:
         labels_and_properties += _generate_properties_query(properties)
@@ -74,7 +79,7 @@ def generate_match_query(edges: Iterable[Edge]) -> str:
     match_query_variables = set()
     for edge in edges:
         connection = f'({variable_name(edge.source_node)}{_generate_labels_and_properties_query(edge.source_node.labels, edge.source_node.properties)})'
-        connection += f'-[{variable_name(edge)}:{":".join(edge.types)}]-'
+        connection += f'-[{variable_name(edge)}:{":".join(edge.labels)}]-'
         connection += f'({variable_name(edge.destination_node)}{_generate_labels_and_properties_query(edge.destination_node.labels, edge.destination_node.properties)})'
         connections.append(connection)
         match_query_variables |= {
