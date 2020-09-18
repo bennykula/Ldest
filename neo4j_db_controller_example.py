@@ -1,4 +1,4 @@
-from data_access_layer.neo4j_db_controller import Neo4jDbController
+from data_access_layer.neo4j_database.neo4j_db_controller import Neo4jDbController
 
 if __name__ == "__main__":
     scheme = "bolt"  # Connecting to Aura, use the "neo4j+s" URI scheme
