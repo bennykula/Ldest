@@ -21,7 +21,8 @@ class Neo4jQueriesGenerator:
                 node_queries.append(self._generate_node_query(node, should_generate_labels_and_properties_query))
 
             # Concat the source node query and the destination node query using the relationship query
-            creation_query += f'-[{self._variable_name(edge)}:{":".join(edge.labels)}]->'.join(node_queries)
+            relationship_query = f'-[{self._variable_name(edge)}:{":".join(edge.labels)}]->'
+            creation_query += relationship_query.join(node_queries)
             creation_query += ', '
 
         creation_query = creation_query.rstrip().rstrip(',')  # remove whitespaces and extra ','
@@ -66,15 +67,20 @@ class Neo4jQueriesGenerator:
     def generate_match_query(self) -> str:
         match_query = 'MATCH '
         connections = []
-        match_query_variables = set()
+        match_query_variables = {
+            self._variable_name(var) for edge in self._edges for var in [edge, edge.source_node, edge.destination_node]
+        }
         for edge in self._edges:
-            connection = f'({self._variable_name(edge.source_node)}{self._generate_labels_and_properties_query(edge.source_node.labels, edge.source_node.properties)})'
-            connection += f'-[{self._variable_name(edge)}:{":".join(edge.labels)}]-'
-            connection += f'({self._variable_name(edge.destination_node)}{self._generate_labels_and_properties_query(edge.destination_node.labels, edge.destination_node.properties)})'
+            node_queries = []
+            for node in [edge.source_node, edge.destination_node]:
+                node_queries.append(
+                    f'({self._variable_name(node)}'
+                    f'{self._generate_labels_and_properties_query(node.labels, node.properties)})'
+                )
+            relationship_query = f'-[{self._variable_name(edge)}:{":".join(edge.labels)}]-'
+            connection = relationship_query.join(node_queries)
             connections.append(connection)
-            match_query_variables |= {
-                self._variable_name(edge), self._variable_name(edge.source_node), self._variable_name(edge.destination_node)
-            }
+
         match_query += ', '.join(connections)
         match_query += f' RETURN {", ".join(match_query_variables)}'
         return match_query
