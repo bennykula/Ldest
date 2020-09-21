@@ -5,7 +5,6 @@ from flask import Blueprint, jsonify, request
 from flask_restful import Resource
 
 from controllers.graph_controller import GraphController
-from data_access_layer.consts import DB_FILE_PATH
 from models.edge_model import EdgeModel
 
 graph_blueprint = Blueprint('graphs', __name__)
@@ -21,9 +20,9 @@ class GraphCollection(Resource):
         """
         data = request.json
         project_name = data['project_name']
-        edges = [EdgeModel(**edge) for edge in data['edges']]
+        edges = [EdgeModel(edge) for edge in data['edges']]
 
-        graph_controller = GraphController(DB_FILE_PATH)
+        graph_controller = GraphController()
         result = {
             'message': 'Created new graph',
             'status': 'ok',
@@ -37,8 +36,8 @@ class GraphCollection(Resource):
         Returns the graphs that match the searched graph
         :return: The matching graphs.
         """
-        graph_controller = GraphController(DB_FILE_PATH)
-        edges: List[EdgeModel] = [EdgeModel(**edge) for edge in json.loads(request.args.get('edges'))]
+        graph_controller = GraphController()
+        edges = [EdgeModel(edge) for edge in json.loads(request.args.get('edges'))]
         result = {
             'message': 'Fetched graphs successfully',
             'status': 'ok',
@@ -57,9 +56,9 @@ class Graph(Resource):
         :return: The updated project's graph
         """
         data = request.json
-        edges = [EdgeModel(**edge) for edge in data['edges']]
+        edges = [EdgeModel(edge) for edge in data['edges']]
 
-        graph_controller = GraphController(DB_FILE_PATH)
+        graph_controller = GraphController()
         project_name = graph_controller.get_project_name(project_id)
         result = {
             'message': f'Updated graph of project {project_name}',
@@ -75,7 +74,7 @@ class Graph(Resource):
         :param project_id: ID
         :return: The project's graph
         """
-        graph_controller = GraphController(DB_FILE_PATH)
+        graph_controller = GraphController()
         project_name = graph_controller.get_project_name(project_id)
         result = {
             'message': f'Fetched graph {project_name} successfully',
