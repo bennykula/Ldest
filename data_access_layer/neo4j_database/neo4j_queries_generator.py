@@ -8,7 +8,7 @@ class Neo4jQueriesGenerator:
     def __init__(self, edges: Iterable[EdgeModel]):
         self._edges = edges
 
-    def generate_creation_query(self) -> str:
+    def generate_create_query(self) -> str:
         """
         Generates a creation query
         :return: The creation query
