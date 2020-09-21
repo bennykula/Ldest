@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, Set
+from typing import Dict, Iterable, Set, Union
 
 from models.edge_model import EdgeModel
 from models.node_model import NodeModel
@@ -114,13 +114,16 @@ class Neo4jQueriesGenerator:
         return labels_query
 
     @staticmethod
-    def _variable_name(obj: any) -> str:
+    def _variable_name(obj: Union[EdgeModel, NodeModel]) -> str:
         """
         Returns a unique variable name to be used on the cypher query
         :param obj: The object we want to have unique variable name in the query
         :return: Unique variable name
         """
-        return f'id_{id(obj)}'
+        if isinstance(obj, NodeModel):
+            return f'id_{obj.id}'
+        elif isinstance(obj, EdgeModel):
+            return f'id_{id(obj)}'
 
     def generate_match_query(self) -> str:
         """
