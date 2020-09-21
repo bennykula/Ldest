@@ -43,8 +43,6 @@ class Neo4jDbController(AbstractDbController):
     @staticmethod
     def _match_transaction_function(tx, match_query: str) -> List[Union[NodeModel, EdgeModel]]:
         return Neo4jDbController._generic_transaction_function(tx, match_query)
-        # match_transaction_result = tx.run(match_query)
-        # return Neo4jDbController._generate_nodes_and_edges_list(match_transaction_result)
 
     @staticmethod
     def _generate_nodes_and_edges_list(transaction_result: neo4j.Result) -> List[Union[NodeModel, EdgeModel]]:
