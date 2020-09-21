@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List
+from typing import Dict
 
 from flask import Blueprint, jsonify, request
 from flask_restful import Resource
@@ -46,20 +46,19 @@ class GraphCollection(Resource):
         return jsonify(result)
 
 
-@graph_blueprint.route('/<int:project_id>')
+@graph_blueprint.route('/<string:project_name>')
 class Graph(Resource):
     @staticmethod
-    def put(project_id: int):
+    def put(project_name: str):
         """
         Updates the project's graph
-        :param project_id: The project ID
+        :param project_name: The project name
         :return: The updated project's graph
         """
         data = request.json
         edges = [EdgeModel(edge) for edge in data['edges']]
 
         graph_controller = GraphController()
-        project_name = graph_controller.get_project_name(project_id)
         result = {
             'message': f'Updated graph of project {project_name}',
             'status': 'ok',
@@ -68,14 +67,13 @@ class Graph(Resource):
         return jsonify(result)
 
     @staticmethod
-    def get(project_id: int):
+    def get(project_name: str):
         """
         Gets the project's graph
-        :param project_id: ID
+        :param project_name: The project name
         :return: The project's graph
         """
         graph_controller = GraphController()
-        project_name = graph_controller.get_project_name(project_id)
         result = {
             'message': f'Fetched graph {project_name} successfully',
             'status': 'ok',

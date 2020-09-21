@@ -12,7 +12,7 @@ def main():
     api = flask_restful.Api(app)
 
     api.add_resource(GraphCollection, '/graphs')
-    api.add_resource(Graph, '/graphs/<int:project_id>')
+    api.add_resource(Graph, '/graphs/<string:project_name>')
 
     app.register_blueprint(graph_blueprint)
     CORS(app)
