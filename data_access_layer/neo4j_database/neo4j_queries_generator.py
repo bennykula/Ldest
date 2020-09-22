@@ -144,5 +144,5 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
 
     @staticmethod
     def generate_project_match_query(project_name: str) -> str:
-        project_match_query = f'MATCH (a {{project_name:\'{project_name}\'}})-[b]-(c) return a, b'
+        project_match_query = f'MATCH (a {{project_name:\'{project_name}\'}})-[b]-() return a, b'
         return project_match_query
