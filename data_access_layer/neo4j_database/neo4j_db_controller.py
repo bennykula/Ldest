@@ -9,7 +9,7 @@ from data_access_layer.abstract_db_contoller import AbstractDbController
 from models.edge_model import EdgeModel
 from models.node_model import NodeModel
 
-
+# TODO: Rename better
 class Neo4jDbController(AbstractDbController):
     def __init__(self, uri: str, user: str, password: str) -> None:
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
@@ -36,13 +36,15 @@ class Neo4jDbController(AbstractDbController):
         return Neo4jDbController._generate_nodes_and_edges_list(transaction_result)
 
     def match(self, match_query: str) -> List[Union[NodeModel, EdgeModel]]:
-        with self._driver.session() as session:
-            result = session.read_transaction(self._match_transaction_function, match_query)
-            return result
+        return self._run_read_query(match_query)
 
-    @staticmethod
-    def _match_transaction_function(tx, match_query: str) -> List[Union[NodeModel, EdgeModel]]:
-        return Neo4jDbController._generic_transaction_function(tx, match_query)
+    def get_project_match(self, project_match_query: str) -> List[Union[NodeModel, EdgeModel]]:
+        return self._run_read_query(project_match_query)
+
+    def _run_read_query(self, read_query: str) -> List[Union[NodeModel, EdgeModel]]:
+        with self._driver.session() as session:
+            result = session.read_transaction(Neo4jDbController._generic_transaction_function, read_query)
+            return result
 
     @staticmethod
     def _generate_nodes_and_edges_list(transaction_result: neo4j.Result) -> List[Union[NodeModel, EdgeModel]]:

@@ -2,13 +2,12 @@ from typing import Dict, Iterable, Set, Union
 
 from models.edge_model import EdgeModel
 from models.node_model import NodeModel
+from utils.singleton import Singleton
 
 
-class Neo4jQueriesGenerator:
-    def __init__(self, edges: Iterable[EdgeModel]):
-        self._edges = edges
-
-    def generate_create_query(self) -> str:
+# TODO: Rename functions
+class Neo4jQueriesGenerator(metaclass=Singleton):
+    def generate_create_query(self, edges: Iterable[EdgeModel]) -> str:
         """
         Generates a creation query
         :return: The creation query
@@ -16,7 +15,7 @@ class Neo4jQueriesGenerator:
         creation_query = f'CREATE '
         connection_queries = []
         creation_query_variables = set()
-        for edge in self._edges:
+        for edge in edges:
             connection_query = self._generate_connection_query(edge, creation_query_variables, True)
             connection_queries.append(connection_query)
             creation_query_variables |= {
@@ -125,7 +124,7 @@ class Neo4jQueriesGenerator:
         elif isinstance(obj, EdgeModel):
             return f'id_{id(obj)}'
 
-    def generate_match_query(self) -> str:
+    def generate_match_query(self, edges: Iterable[EdgeModel]) -> str:
         """
         Generates a match query
         :return: The match query
@@ -133,12 +132,17 @@ class Neo4jQueriesGenerator:
         match_query = 'MATCH '
         connection_queries = []
         match_query_variables = {
-            self._variable_name(var) for edge in self._edges for var in [edge, edge.source_node, edge.destination_node]
+            self._variable_name(var) for edge in edges for var in [edge, edge.source_node, edge.destination_node]
         }
-        for edge in self._edges:
+        for edge in edges:
             connection_query = self._generate_connection_query(edge, set())
             connection_queries.append(connection_query)
 
         match_query += ', '.join(connection_queries)
         match_query += f' RETURN {", ".join(match_query_variables)}'
         return match_query
+
+    @staticmethod
+    def generate_project_match_query(project_name: str) -> str:
+        project_match_query = f'MATCH (a {{project_name:\'{project_name}\'}})-[b]-(c) return a, b'
+        return project_match_query

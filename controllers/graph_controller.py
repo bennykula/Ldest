@@ -11,12 +11,12 @@ first_mock_graph = [
         {
             'labels': ['Loves'],
             'source_node': {
-                'id': '1',
+                'id': '12222222222222',
                 'labels': {'PC'},
                 'properties': dict(a='13', b='24')
             },
             'destination_node': {
-                'id': '2',
+                'id': '9999999999999992',
                 'labels': {'PC'},
                 'properties': dict(a='32', b='44')
             }
@@ -26,12 +26,12 @@ first_mock_graph = [
         {
             'labels': ['Hates'],
             'source_node': {
-                'id': '1',
+                'id': '1333333333333333333',
                 'labels': {'PC'},
                 'properties': dict(a='13', b='24')
             },
             'destination_node': {
-                'id': '3',
+                'id': '9999999999999993',
                 'labels': {'PC'},
                 'properties': dict(a='c3', b='d4')
             }
@@ -51,13 +51,21 @@ class GraphController(metaclass=Singleton):
         self._db_controller = Neo4jDbController(uri, user, password)
 
     def get_graph(self, project_name: str) -> List[EdgeModel]:
-        return first_mock_graph
+        project_match_query = Neo4jQueriesGenerator().generate_project_match_query(project_name)
+        return self._db_controller.get_project_match(project_match_query)
 
     def update_graph(self, project_name: str, edges: List[EdgeModel]) -> List[EdgeModel]:
+        update_graph_query = ''
         return first_mock_graph
 
-    def add_graph(self, project_name: str, edges: List[EdgeModel]):
-        return first_mock_graph
+    def add_graph(self, project_name: str, edges: List[EdgeModel]) -> List[Union[NodeModel, EdgeModel]]:
+        for edge in edges:
+            edge.source_node.properties.update({'project_name': project_name})
+            edge.destination_node.properties.update({'project_name': project_name})
+        create_query = Neo4jQueriesGenerator().generate_create_query(edges)
+        return self._db_controller.create(create_query)
 
-    def get_project_name(self, project_id: int) -> str:
-        return 'TKVHGS'
+    def get_matching_graphs(self, edges: List[EdgeModel]) -> List[Union[NodeModel, EdgeModel]]:
+        match_query = Neo4jQueriesGenerator().generate_match_query(edges)
+        return self._db_controller.match(match_query)
+
