@@ -6,6 +6,9 @@ from flask_restful import Resource
 
 from controllers.graph_controller import GraphController
 from models.edge_model import EdgeModel
+from models.graph_update_request_model import GraphUpdateRequestModel
+from models.node_model import NodeModel
+from models.relationship_model import RelationshipModel
 
 graph_blueprint = Blueprint('graphs', __name__)
 
@@ -20,13 +23,14 @@ class GraphCollection(Resource):
         """
         data = request.json
         project_name = data['project_name']
-        edges = [EdgeModel(edge) for edge in data['edges']]
+        edges = [EdgeModel(edge_dict) for edge_dict in data['edges']]
+        nodes = [NodeModel.from_dict(node_dict) for node_dict in data['nodes']]
 
         graph_controller = GraphController()
         result = {
             'message': 'Created new graph',
             'status': 'ok',
-            'graph': graph_controller.add_graph(project_name, edges)
+            'graph': graph_controller.add_graph(project_name, edges, nodes)
         }
         return jsonify(result)
 
@@ -37,7 +41,7 @@ class GraphCollection(Resource):
         :return: The matching graphs.
         """
         graph_controller = GraphController()
-        edges = [EdgeModel(edge) for edge in json.loads(request.args.get('edges'))]
+        edges = [EdgeModel(edge_dict) for edge_dict in json.loads(request.args.get('edges'))]
         result = {
             'message': 'Fetched graphs successfully',
             'status': 'ok',
@@ -56,15 +60,33 @@ class Graph(Resource):
         :return: The updated project's graph
         """
         data = request.json
-        edges = [EdgeModel(edge) for edge in data['edges']]
-
+        graph_update_request_model = Graph._get_graph_update_request_model(data)
         graph_controller = GraphController()
         result = {
             'message': f'Updated graph of project {project_name}',
             'status': 'ok',
-            'graph': graph_controller.update_graph(project_name, edges)
+            'graph': graph_controller.update_graph(project_name, graph_update_request_model)
         }
         return jsonify(result)
+
+    @staticmethod
+    def _get_graph_update_request_model(data: Dict[str, any]):
+        nodes_to_add = [NodeModel(node_dict) for node_dict in data['nodes']['add']]
+        nodes_to_update = [NodeModel(node_dict) for node_dict in data['nodes']['update']]
+        nodes_to_delete = [NodeModel(node_dict) for node_dict in data['nodes']['delete']]
+        relationships_to_add = [
+            RelationshipModel(relationship_dict) for relationship_dict in data['relationship_dict']['add']
+        ]
+        relationships_to_update = [
+            RelationshipModel(relationship_dict) for relationship_dict in data['relationship_dict']['update']
+        ]
+        relationships_to_delete = [
+            RelationshipModel(relationship_dict) for relationship_dict in data['relationship_dict']['delete']
+        ]
+        return GraphUpdateRequestModel(
+            nodes_to_add, nodes_to_update, nodes_to_delete,
+            relationships_to_add, relationships_to_update, relationships_to_delete
+        )
 
     @staticmethod
     def get(project_name: str):

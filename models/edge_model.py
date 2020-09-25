@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Iterable, List
+from typing import Dict, List
 
 import neo4j
 
@@ -32,19 +32,3 @@ class EdgeModel:
                 properties=destination_node_dict['properties']
             )
         )
-
-    @classmethod
-    def to_edge_model(cls, labels: Iterable[str], source_node: NodeModel, destination_node: NodeModel):
-        return cls({
-            'labels': labels,
-            'source_node': {
-                'id': source_node.id,
-                'labels': source_node.labels,
-                'properties': source_node.properties
-            },
-            'destination_node': {
-                'id': destination_node.id,
-                'labels': destination_node.labels,
-                'properties': destination_node.properties
-            }
-        })

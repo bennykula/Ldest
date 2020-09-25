@@ -1,9 +1,11 @@
-from typing import List, Union
+from typing import Iterable, List, Union
 
 from data_access_layer.neo4j_database.neo4j_db_controller import Neo4jDbController
 from data_access_layer.neo4j_database.neo4j_queries_generator import Neo4jQueriesGenerator
 from models.edge_model import EdgeModel
+from models.graph_update_request_model import GraphUpdateRequestModel
 from models.node_model import NodeModel
+from models.relationship_model import RelationshipModel
 from utils.singleton import Singleton
 
 first_mock_graph = [
@@ -50,22 +52,26 @@ class GraphController(metaclass=Singleton):
         password = "123456"
         self._db_controller = Neo4jDbController(uri, user, password)
 
-    def get_graph(self, project_name: str) -> List[EdgeModel]:
+    def get_graph(self, project_name: str) -> List[Union[NodeModel, RelationshipModel]]:
         project_match_query = Neo4jQueriesGenerator().generate_project_match_query(project_name)
         return self._db_controller.get_project_match(project_match_query)
 
-    def update_graph(self, project_name: str, edges: List[EdgeModel]) -> List[EdgeModel]:
+    def update_graph(self, project_name: str, graph_update_request_model: GraphUpdateRequestModel) -> List[EdgeModel]:
         update_graph_query = ''
         return first_mock_graph
 
-    def add_graph(self, project_name: str, edges: List[EdgeModel]) -> List[Union[NodeModel, EdgeModel]]:
+    def add_graph(self,
+                  project_name: str,
+                  edges: Iterable[EdgeModel],
+                  nodes: Iterable[NodeModel]) -> List[Union[NodeModel, RelationshipModel]]:
+        for node in nodes:
+            node.properties.update({'project_name': project_name})
         for edge in edges:
             edge.source_node.properties.update({'project_name': project_name})
             edge.destination_node.properties.update({'project_name': project_name})
-        create_query = Neo4jQueriesGenerator().generate_create_query(edges)
+        create_query = Neo4jQueriesGenerator().generate_create_query(edges, nodes)
         return self._db_controller.create(create_query)
 
-    def get_matching_graphs(self, edges: List[EdgeModel]) -> List[Union[NodeModel, EdgeModel]]:
+    def get_matching_graphs(self, edges: Iterable[EdgeModel]) -> List[Union[NodeModel, RelationshipModel]]:
         match_query = Neo4jQueriesGenerator().generate_match_query(edges)
         return self._db_controller.match(match_query)
-

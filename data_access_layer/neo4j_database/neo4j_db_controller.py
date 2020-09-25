@@ -6,8 +6,10 @@ from neo4j import GraphDatabase
 from neo4j.exceptions import ServiceUnavailable
 
 from data_access_layer.abstract_db_contoller import AbstractDbController
-from models.edge_model import EdgeModel
 from models.node_model import NodeModel
+
+from models.relationship_model import RelationshipModel
+
 
 # TODO: Rename better
 class Neo4jDbController(AbstractDbController):
@@ -17,13 +19,13 @@ class Neo4jDbController(AbstractDbController):
     def __del__(self) -> None:
         self._driver.close()
 
-    def create(self, create_query: str) -> List[Union[NodeModel, EdgeModel]]:
+    def create(self, create_query: str) -> List[Union[NodeModel, RelationshipModel]]:
         with self._driver.session() as session:
             result = session.write_transaction(self._create_transaction_function, create_query)
             return result
 
     @staticmethod
-    def _create_transaction_function(tx, create_query: str) -> List[Union[NodeModel, EdgeModel]]:
+    def _create_transaction_function(tx, create_query: str) -> List[Union[NodeModel, RelationshipModel]]:
         try:
             return Neo4jDbController._generic_transaction_function(tx, create_query)
         except ServiceUnavailable as exception:
@@ -31,23 +33,23 @@ class Neo4jDbController(AbstractDbController):
             raise
 
     @staticmethod
-    def _generic_transaction_function(tx, query: str):
+    def _generic_transaction_function(tx, query: str) -> List[Union[NodeModel, RelationshipModel]]:
         transaction_result = tx.run(query)
         return Neo4jDbController._generate_nodes_and_edges_list(transaction_result)
 
-    def match(self, match_query: str) -> List[Union[NodeModel, EdgeModel]]:
+    def match(self, match_query: str) -> List[Union[NodeModel, RelationshipModel]]:
         return self._run_read_query(match_query)
 
-    def get_project_match(self, project_match_query: str) -> List[Union[NodeModel, EdgeModel]]:
+    def get_project_match(self, project_match_query: str) -> List[Union[NodeModel, RelationshipModel]]:
         return self._run_read_query(project_match_query)
 
-    def _run_read_query(self, read_query: str) -> List[Union[NodeModel, EdgeModel]]:
+    def _run_read_query(self, read_query: str) -> List[Union[NodeModel, RelationshipModel]]:
         with self._driver.session() as session:
             result = session.read_transaction(Neo4jDbController._generic_transaction_function, read_query)
             return result
 
     @staticmethod
-    def _generate_nodes_and_edges_list(transaction_result: neo4j.Result) -> List[Union[NodeModel, EdgeModel]]:
+    def _generate_nodes_and_edges_list(transaction_result: neo4j.Result) -> List[Union[NodeModel, RelationshipModel]]:
         result = []
         for record in transaction_result:
             for item in record.items():
@@ -55,7 +57,5 @@ class Neo4jDbController(AbstractDbController):
                 if isinstance(entity, neo4j.data.Node):
                     result.append(NodeModel(entity))
                 elif isinstance(entity, neo4j.data.Relationship):
-                    result.append(
-                        EdgeModel.to_edge_model({entity.type}, NodeModel(entity.nodes[0]), NodeModel(entity.nodes[1]))
-                    )
+                    result.append(RelationshipModel(entity))
         return result

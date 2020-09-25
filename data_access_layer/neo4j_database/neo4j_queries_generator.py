@@ -7,12 +7,13 @@ from utils.singleton import Singleton
 
 # TODO: Rename functions
 class Neo4jQueriesGenerator(metaclass=Singleton):
-    def generate_create_query(self, edges: Iterable[EdgeModel]) -> str:
+    def generate_create_query(self, edges: Iterable[EdgeModel], nodes: Iterable[NodeModel]) -> str:
         """
         Generates a creation query
         :return: The creation query
         """
         creation_query = f'CREATE '
+        node_queries = []
         connection_queries = []
         creation_query_variables = set()
         for edge in edges:
@@ -22,7 +23,11 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
                 self._variable_name(x)
                 for x in [edge, edge.source_node, edge.destination_node]
             }
-        creation_query += ', '.join(connection_queries)
+        for node in nodes:
+            node_query = self._generate_node_query(node, True)
+            node_queries.append(node_query)
+            creation_query_variables.add(self._variable_name(node))
+        creation_query += ', '.join(connection_queries + node_queries)
         creation_query += f' RETURN {", ".join(creation_query_variables)}'
         return creation_query
 
@@ -144,5 +149,7 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
 
     @staticmethod
     def generate_project_match_query(project_name: str) -> str:
-        project_match_query = f'MATCH (a {{project_name:\'{project_name}\'}})-[b]-() return a, b'
+        project_match_query = f'MATCH' \
+                              f'(a {{project_name:\'{project_name}\'}})-[b]-(c {{project_name:\'{project_name}\'}})' \
+                              f' return a, b, c'
         return project_match_query
