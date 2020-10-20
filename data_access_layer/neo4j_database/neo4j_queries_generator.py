@@ -124,9 +124,9 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
         :param obj: The object we want to have unique variable name in the query
         :return: Unique variable name
         """
-        if isinstance(obj, NodeModel):
+        if hasattr(obj, 'id'):
             return f'id_{obj.id}'
-        elif isinstance(obj, EdgeModel):
+        else:
             return f'id_{id(obj)}'
 
     def generate_match_query(self, edges: Iterable[EdgeModel]) -> str:
