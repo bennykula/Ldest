@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, Set, Union
+from typing import Iterable, Union
 
 from models.edge_model import EdgeModel
 from models.node_model import NodeModel
@@ -33,7 +33,7 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
 
     def _generate_connection_query(self,
                                    edge: EdgeModel,
-                                   dismiss_labels_and_properties_variables: Set[str],
+                                   dismiss_labels_and_properties_variables: set[str],
                                    is_relationship_directed=False) -> str:
         """
         Generates the connection query part of the cypher query, for example:
@@ -88,7 +88,7 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
         return creation_query
 
     @staticmethod
-    def _generate_labels_and_properties_query(labels: Iterable[str], properties: Dict[str, str]) -> str:
+    def _generate_labels_and_properties_query(labels: Iterable[str], properties: dict[str, str]) -> str:
         """
         Generate the labels and properties part of the cypher query, for example:
         1. :Swedish:Person {name:'Andy', title:'Developer', id:'2'})
@@ -103,7 +103,7 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
         return labels_and_properties
 
     @staticmethod
-    def _generate_properties_query(properties: Dict[str, str]) -> str:
+    def _generate_properties_query(properties: dict[str, str]) -> str:
         """
         Generates the properties part of the cypher query, for example:
         1. {name:'Andy', title:'Developer', id:'2'}
