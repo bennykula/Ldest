@@ -20,13 +20,13 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
             connection_query = self._generate_connection_query(edge, creation_query_variables, True)
             connection_queries.append(connection_query)
             creation_query_variables |= {
-                self._variable_name(x)
+                self._generate_variable_name(x)
                 for x in [edge, edge.source_node, edge.destination_node]
             }
         for node in nodes:
             node_query = self._generate_node_query(node, True)
             node_queries.append(node_query)
-            creation_query_variables.add(self._variable_name(node))
+            creation_query_variables.add(self._generate_variable_name(node))
         creation_query += ', '.join(connection_queries + node_queries)
         creation_query += f' RETURN {", ".join(creation_query_variables)}'
         return creation_query
@@ -47,11 +47,11 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
         """
         source_node_query = self._generate_node_query(
             edge.source_node,
-            self._variable_name(edge.source_node) not in dismiss_labels_and_properties_variables
+            self._generate_variable_name(edge.source_node) not in dismiss_labels_and_properties_variables
         )
         destination_node_query = self._generate_node_query(
             edge.destination_node,
-            self._variable_name(edge.destination_node) not in dismiss_labels_and_properties_variables
+            self._generate_variable_name(edge.destination_node) not in dismiss_labels_and_properties_variables
         )
         relationship_query = self._generate_relationship_query(edge, is_relationship_directed)
         connection_query = relationship_query.join([source_node_query, destination_node_query])
@@ -67,9 +67,9 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
         :return: The relationship query, for example, -[:FRIENDS]- OR -[:HATES]->
         """
         if is_relationship_directed:
-            relationship_query = f'-[{self._variable_name(edge)}:{":".join(edge.labels)}]->'
+            relationship_query = f'-[{self._generate_variable_name(edge)}:{":".join(edge.labels)}]->'
         else:
-            relationship_query = f'-[{self._variable_name(edge)}:{":".join(edge.labels)}]-'
+            relationship_query = f'-[{self._generate_variable_name(edge)}:{":".join(edge.labels)}]-'
         return relationship_query
 
     def _generate_node_query(self, node: NodeModel, should_generate_labels_and_properties_query: bool) -> str:
@@ -79,7 +79,7 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
         :param node: The node to generate into a query
         :return: The node part of the cypher query
         """
-        creation_query = f'({self._variable_name(node)}'
+        creation_query = f'({self._generate_variable_name(node)}'
         if should_generate_labels_and_properties_query:
             properties_dict = node.properties
             properties_dict.update({'id': node.id})
@@ -118,7 +118,7 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
         return labels_query
 
     @staticmethod
-    def _variable_name(obj: Union[EdgeModel, NodeModel]) -> str:
+    def _generate_variable_name(obj: Union[EdgeModel, NodeModel]) -> str:
         """
         Returns a unique variable name to be used on the cypher query
         :param obj: The object we want to have unique variable name in the query
@@ -137,7 +137,9 @@ class Neo4jQueriesGenerator(metaclass=Singleton):
         match_query = 'MATCH '
         connection_queries = []
         match_query_variables = {
-            self._variable_name(var) for edge in edges for var in [edge, edge.source_node, edge.destination_node]
+            self._generate_variable_name(var)
+            for edge in edges
+            for var in [edge, edge.source_node, edge.destination_node]
         }
         for edge in edges:
             connection_query = self._generate_connection_query(edge, set())
